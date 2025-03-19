@@ -28,7 +28,7 @@ const JuegoActivo = () => {
   useEffect(() => {
     if (mostrarResultado && sonidoActivado) {
       if (esCorrecto) {
-        reproducirSonidoExito(sonidoActivado);
+        // reproducirSonidoExito(sonidoActivado);
       } else {
         reproducirSonidoError(sonidoActivado);
       }
@@ -38,12 +38,15 @@ const JuegoActivo = () => {
   // Efecto para reproducir nota cuando cambia
   useEffect(() => {
     if (notaActual && sonidoActivado) {
-      setTimeout(() => {
+      // Pequeño retraso para estar seguros de que el componente está listo
+      const timeoutId = setTimeout(() => {
         console.log(
           `Reproduciendo nota inicial: ${notaActual.solfeo} (${notaActual.nombre}) con frecuencia: ${notaActual.frecuencia}Hz`
         );
         reproducirNota(notaActual.frecuencia, sonidoActivado, setReproduciendo);
       }, 500);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [notaActual, sonidoActivado, setReproduciendo]);
 
@@ -56,7 +59,10 @@ const JuegoActivo = () => {
 
   // Manejar clic en botón de escuchar nota
   const handleEscucharNota = () => {
-    if (notaActual && !reproduciendo) {
+    if (notaActual && !reproduciendo && sonidoActivado) {
+      console.log(
+        `Botón escuchar: ${notaActual.solfeo} (${notaActual.nombre}) con frecuencia: ${notaActual.frecuencia}Hz`
+      );
       reproducirNota(notaActual.frecuencia, sonidoActivado, setReproduciendo);
     }
   };

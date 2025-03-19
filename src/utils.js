@@ -1,6 +1,18 @@
 // Utilidades para audio y otras funciones
 
-// Reproducir sonido de una nota
+// Singleton AudioContext para todo el juego
+let globalAudioContext = null;
+
+// Obtener AudioContext (o crearlo si no existe)
+const getAudioContext = () => {
+  if (!globalAudioContext) {
+    globalAudioContext = new (window.AudioContext ||
+      window.webkitAudioContext)();
+  }
+  return globalAudioContext;
+};
+
+// Reproducir sonido de una nota con un tono puro
 export const reproducirNota = (
   frecuencia,
   sonidoActivado,
@@ -9,31 +21,35 @@ export const reproducirNota = (
   if (!sonidoActivado) return;
 
   try {
-    console.log(
-      `Función reproducirNota llamada con frecuencia: ${frecuencia}Hz`
-    );
+    console.log(`Reproduciendo nota con frecuencia exacta: ${frecuencia}Hz`);
 
-    const audioContext = new (window.AudioContext ||
-      window.webkitAudioContext)();
+    const audioContext = getAudioContext();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
-    oscillator.type = "sine"; // Tipo de onda sinusoidal
-    oscillator.frequency.value = frecuencia; // Asignar frecuencia exacta
+    // Configuración precisa del oscilador
+    oscillator.type = "sine"; // Tono puro sinusoidal
+    oscillator.frequency.setValueAtTime(frecuencia, audioContext.currentTime); // Frecuencia exacta
 
-    // Configurar la envolvente ADSR (Attack-Decay-Sustain-Release)
+    // Configurar envolvente de volumen para evitar clics
     gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.1); // Attack
-    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1); // Release
+    gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.1); // Ataque
+    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.3); // Sostenido
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1.0); // Liberación
 
+    // Conectar componentes de audio
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
-    oscillator.start();
+    // Iniciar reproducción
+    oscillator.start(audioContext.currentTime);
     setReproduciendo(true);
 
+    // Detener después de un tiempo
+    oscillator.stop(audioContext.currentTime + 1.0);
+
+    // Limpiar estado después de reproducir
     setTimeout(() => {
-      oscillator.stop();
       setReproduciendo(false);
     }, 1000);
   } catch (error) {
@@ -47,14 +63,13 @@ export const reproducirSonidoExito = (sonidoActivado) => {
   if (!sonidoActivado) return;
 
   try {
-    const audioContext = new (window.AudioContext ||
-      window.webkitAudioContext)();
+    const audioContext = getAudioContext();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
     // Usar un tono más agudo y agradable
     oscillator.type = "sine";
-    oscillator.frequency.value = 800;
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
 
     // Envolvente suave para el sonido de éxito
     gainNode.gain.setValueAtTime(0, audioContext.currentTime);
@@ -64,8 +79,8 @@ export const reproducirSonidoExito = (sonidoActivado) => {
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
-    oscillator.start();
-    setTimeout(() => oscillator.stop(), 500);
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
   } catch (error) {
     console.error("Error al reproducir sonido de éxito:", error);
   }
@@ -76,14 +91,13 @@ export const reproducirSonidoError = (sonidoActivado) => {
   if (!sonidoActivado) return;
 
   try {
-    const audioContext = new (window.AudioContext ||
-      window.webkitAudioContext)();
+    const audioContext = getAudioContext();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
     // Usar un tono más grave para el error
     oscillator.type = "sine";
-    oscillator.frequency.value = 200;
+    oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
 
     // Envolvente corta para el sonido de error
     gainNode.gain.setValueAtTime(0, audioContext.currentTime);
@@ -93,8 +107,8 @@ export const reproducirSonidoError = (sonidoActivado) => {
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
-    oscillator.start();
-    setTimeout(() => oscillator.stop(), 500);
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
   } catch (error) {
     console.error("Error al reproducir sonido de error:", error);
   }

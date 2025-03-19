@@ -51,7 +51,7 @@ const Pentagrama = () => {
   const handleReproducirNota = () => {
     if (reproduciendo || !sonidoActivado) return;
     console.log(
-      `Reproduciendo nota en botón: ${notaActual.solfeo} (${notaActual.nombre}) con frecuencia: ${notaActual.frecuencia}Hz`
+      `Botón en pentragrama - Reproduciendo: ${notaActual.solfeo} (${notaActual.nombre}) con frecuencia: ${notaActual.frecuencia}Hz`
     );
     reproducirNota(notaActual.frecuencia, sonidoActivado, setReproduciendo);
   };
@@ -71,11 +71,14 @@ const Pentagrama = () => {
         ))}
 
         {/* Clave de sol */}
-        <div className="absolute left-2 text-3xl" style={{ top: "20px" }}>
+        <div
+          className="absolute left-2 text-6xl font-bold"
+          style={{ top: "30px", transform: "scale(3)" }}
+        >
           𝄞
         </div>
 
-        {/* Nota - Ajustada para que se centre mejor en las líneas */}
+        {/* Nota */}
         <div
           className="absolute w-6 h-4 bg-black rounded-full"
           style={{
