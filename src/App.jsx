@@ -1,11 +1,11 @@
 import React from "react";
 import useStore from "./store";
-import ConfiguracionJuego from "./components/ConfiguracionJuego";
-import JuegoActivo from "./components/JuegoActivo";
-import ResumenJuego from "./components/ResumenJuego";
+import GameConfiguration from "./components/GameConfiguration";
+import ActiveGame from "./components/ActiveGame";
+import GameSummary from "./components/GameSummary";
 
 const App = () => {
-  const { juegoActivo, juegoCompleto } = useStore();
+  const { gameActive, gameComplete } = useStore();
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-indigo-100 p-4">
@@ -13,11 +13,9 @@ const App = () => {
         <h1 className="text-2xl font-bold text-center mb-2 text-indigo-800">
           Quiz de Notación Musical
         </h1>
-
-        {!juegoActivo && !juegoCompleto && <ConfiguracionJuego />}
-        {juegoActivo && <JuegoActivo />}
-        {juegoCompleto && <ResumenJuego />}
-
+        {!gameActive && !gameComplete && <GameConfiguration />}
+        {gameActive && <ActiveGame />}
+        {gameComplete && <GameSummary />}
         <div className="mt-2 text-center text-xs text-gray-600">
           <p>
             Usa este quiz para aprender las notas en el pentagrama en notación
