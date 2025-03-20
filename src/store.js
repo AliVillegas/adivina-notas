@@ -397,7 +397,10 @@ const useStore = create((set, get) => ({
 
     if (state.showResult || !state.currentNote) return;
 
-    const correct = note.solfeo === state.currentNote.solfeo;
+    // UPDATED: Check both solfeo (note name) and octave for an exact match
+    const correct =
+      note.solfeo === state.currentNote.solfeo &&
+      note.octave === state.currentNote.octave;
 
     // Calculate response time
     const responseTimeMs = state.noteStartTime
