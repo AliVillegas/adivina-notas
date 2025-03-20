@@ -231,7 +231,12 @@ const loadHistory = () => {
 // Save history to localStorage
 const saveHistory = (history) => {
   if (typeof window === "undefined") return;
-  localStorage.setItem("historialQuizMusical", JSON.stringify(history));
+  try {
+    const validHistory = Array.isArray(history) ? history : [];
+    localStorage.setItem("historialQuizMusical", JSON.stringify(validHistory));
+  } catch (e) {
+    console.error("Error saving history:", e);
+  }
 };
 
 // Create store with Zustand
@@ -251,19 +256,24 @@ const useStore = create((set, get) => ({
   isCorrect: false,
   playing: false,
   soundEnabled: true,
-  gameHistory: loadHistory(),
+  gameHistory: loadHistory() || [],
   noteStartTime: null,
   selectedOctaves: [4, 5], // Default: include first two octaves
 
   // Actions
-  setTotalRounds: (total) => set({ totalRounds: total }),
-  setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
-  setSelectedOctaves: (octaves) => set({ selectedOctaves: octaves }),
+  setTotalRounds: (total) => set({ totalRounds: Math.max(1, total || 5) }),
+  setSoundEnabled: (enabled) => set({ soundEnabled: !!enabled }),
+  setSelectedOctaves: (octaves) => {
+    // Ensure octaves is a valid array with at least one element
+    const validOctaves =
+      Array.isArray(octaves) && octaves.length > 0 ? octaves : [4, 5]; // Default to [4, 5] if invalid
+    set({ selectedOctaves: validOctaves });
+  },
 
   // Export game history as CSV
   exportHistory: () => {
     const { gameHistory } = get();
-    if (gameHistory.length === 0) {
+    if (!Array.isArray(gameHistory) || gameHistory.length === 0) {
       return null;
     }
 
@@ -273,21 +283,25 @@ const useStore = create((set, get) => ({
 
     // Add data for each game
     gameHistory.forEach((game) => {
-      if (!game.completed) return;
+      if (!game || !game.completed) return;
 
       const date = new Date(game.date).toLocaleString();
-      const score = game.score;
-      const totalRounds = game.totalRounds;
-      const accuracy = Math.round((score / totalRounds) * 100);
+      const score = game.score || 0;
+      const totalRounds = game.totalRounds || 0;
+      const accuracy =
+        totalRounds > 0 ? Math.round((score / totalRounds) * 100) : 0;
+
+      // Safely access rounds
+      const rounds = Array.isArray(game.rounds) ? game.rounds : [];
 
       // Collect all shown notes, selected notes, results, and times
-      const roundNumbers = game.rounds.map((r) => r.round).join("|");
-      const shownNotes = game.rounds.map((r) => r.shownNote).join("|");
-      const selectedNotes = game.rounds.map((r) => r.selectedNote).join("|");
-      const results = game.rounds
+      const roundNumbers = rounds.map((r) => r.round).join("|");
+      const shownNotes = rounds.map((r) => r.shownNote).join("|");
+      const selectedNotes = rounds.map((r) => r.selectedNote).join("|");
+      const results = rounds
         .map((r) => (r.correct ? "Correcto" : "Incorrecto"))
         .join("|");
-      const times = game.rounds.map((r) => r.responseTimeMs || "N/A").join("|");
+      const times = rounds.map((r) => r.responseTimeMs || "N/A").join("|");
 
       csv += `"${date}",${score},${totalRounds},${accuracy}%,"${roundNumbers}","${shownNotes}","${selectedNotes}","${results}","${times}"\n`;
     });
@@ -298,19 +312,33 @@ const useStore = create((set, get) => ({
   // Start game
   startGame: () => {
     const state = get();
-    const newRounds = [];
 
     // Save previous game if completed
     if (state.gameComplete && state.score > 0) {
+      // Safely get the history
+      const currentHistory = Array.isArray(state.gameHistory)
+        ? state.gameHistory
+        : [];
+
+      // Get the rounds from the current game if it exists
+      const currentGameRounds =
+        currentHistory.length > 0 && !currentHistory[0].completed
+          ? Array.isArray(currentHistory[0].rounds)
+            ? currentHistory[0].rounds
+            : []
+          : [];
+
       const newHistory = [
         {
           date: new Date().toISOString(),
           totalRounds: state.totalRounds,
           score: state.score,
-          rounds: newRounds,
+          rounds: currentGameRounds,
           completed: true,
         },
-        ...state.gameHistory,
+        ...currentHistory.filter(
+          (_, index) => index > 0 || currentHistory[0].completed
+        ),
       ].slice(0, 10); // Keep only the last 10 games
 
       saveHistory(newHistory);
@@ -335,10 +363,16 @@ const useStore = create((set, get) => ({
   generateNewNote: () => {
     const { notes, selectedOctaves } = get();
 
+    // Ensure selectedOctaves is valid
+    const validOctaves =
+      Array.isArray(selectedOctaves) && selectedOctaves.length > 0
+        ? selectedOctaves
+        : [4, 5];
+
     // Filter notes based on selected octaves
     const availableNotes = notes.filter((note) => {
       const octave = parseInt(note.name.slice(-1));
-      return selectedOctaves.includes(octave);
+      return validOctaves.includes(octave);
     });
 
     const notesToUse = availableNotes.length > 0 ? availableNotes : notes;
@@ -361,7 +395,7 @@ const useStore = create((set, get) => ({
   handleAnswerSelection: (note) => {
     const state = get();
 
-    if (state.showResult) return;
+    if (state.showResult || !state.currentNote) return;
 
     const correct = note.solfeo === state.currentNote.solfeo;
 
@@ -388,8 +422,11 @@ const useStore = create((set, get) => ({
       score: correct ? state.score + 1 : state.score,
     });
 
-    // Update temporary history
-    let updatedHistory = [...state.gameHistory];
+    // Safely get game history
+    const currentHistory = Array.isArray(state.gameHistory)
+      ? state.gameHistory
+      : [];
+    let updatedHistory = [...currentHistory];
 
     // If no game in progress or the last one is completed, create a new one
     if (!updatedHistory.length || updatedHistory[0].completed) {
@@ -402,7 +439,12 @@ const useStore = create((set, get) => ({
       });
     } else {
       // Update game in progress
+      // FIX: Check if rounds property exists and is an array before pushing
+      if (!updatedHistory[0].rounds) {
+        updatedHistory[0].rounds = [];
+      }
       updatedHistory[0].rounds.push(newRound);
+
       updatedHistory[0].score = correct
         ? updatedHistory[0].score + 1
         : updatedHistory[0].score;
@@ -420,7 +462,11 @@ const useStore = create((set, get) => ({
         set({ gameComplete: true, gameActive: false });
 
         // Mark current game as completed
-        const updatedHistory = [...state.gameHistory];
+        const currentHistory = Array.isArray(state.gameHistory)
+          ? state.gameHistory
+          : [];
+        let updatedHistory = [...currentHistory];
+
         if (updatedHistory.length > 0) {
           updatedHistory[0].completed = true;
           saveHistory(updatedHistory);
@@ -435,7 +481,7 @@ const useStore = create((set, get) => ({
   },
 
   // Set playback state
-  setPlaying: (state) => set({ playing: state }),
+  setPlaying: (state) => set({ playing: !!state }),
 }));
 
 export default useStore;
