@@ -8,7 +8,8 @@ import {
 } from "../utils/historyUtils";
 
 const GameSummary = () => {
-  const { score, totalRounds, gameHistory, startGame } = useGameStore();
+  const { score, totalRounds, gameHistory, startGame, resetGame } =
+    useGameStore();
   const { selectedClef } = useSettingsStore();
 
   // Get the latest completed game from history
@@ -97,12 +98,21 @@ const GameSummary = () => {
         </div>
       )}
 
-      <button
-        onClick={startGame}
-        className="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition-colors duration-300 shadow-md"
-      >
-        Jugar Otra Vez
-      </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <button
+          onClick={startGame}
+          className="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition-colors duration-300 shadow-md"
+        >
+          Jugar Otra Vez
+        </button>
+
+        <button
+          onClick={resetGame}
+          className="w-full bg-gray-500 text-white py-2 rounded-md hover:bg-gray-600 transition-colors duration-300 shadow-md"
+        >
+          Volver a Configuración
+        </button>
+      </div>
     </div>
   );
 };

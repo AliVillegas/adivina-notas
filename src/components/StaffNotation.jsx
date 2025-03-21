@@ -1,4 +1,4 @@
-import React from "react";
+import React, { act } from "react";
 import { useGameStore } from "../stores/gameStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useAudioStore } from "../stores/audioStore";
@@ -119,8 +119,8 @@ const StaffNotation = () => {
         <div
           className="absolute left-2 text-6xl font-bold"
           style={{
-            top: activeClef === "treble" ? "30px" : "18px",
-            transform: "scale(3)",
+            top: activeClef === "treble" ? "30px" : "38px",
+            transform: activeClef === "treble" ? "scale(2)" : "scale(1)",
           }}
         >
           {activeClef === "treble" ? "𝄞" : "𝄢"}
@@ -137,7 +137,7 @@ const StaffNotation = () => {
         />
 
         {/* Note stem */}
-        {currentNote.position < 2 ? (
+        {/* {currentNote.position < 2 ? (
           <div
             className="absolute w-1 bg-black"
             style={{
@@ -155,7 +155,7 @@ const StaffNotation = () => {
               height: "28px",
             }}
           />
-        )}
+        )} */}
       </div>
       {/* Button to listen to the note */}
       {soundEnabled && (

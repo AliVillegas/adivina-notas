@@ -1,7 +1,6 @@
 import React from "react";
 import { useGameStore } from "../stores/gameStore";
 import { useSettingsStore } from "../stores/settingsStore";
-import { useNotesStore } from "../stores/notesStore";
 import GameHistory from "./GameHistory";
 
 const GameConfiguration = () => {
@@ -91,7 +90,7 @@ const GameConfiguration = () => {
     } else {
       if (octave === 2) return "Notas bajas";
       if (octave === 3) return "Notas medias";
-      if (octave === 4) return "Notas altas (incl. Do central)";
+      // if (octave === 4) return "Notas altas (incl. Do central)";
     }
     return "";
   };
@@ -105,7 +104,7 @@ const GameConfiguration = () => {
     } else {
       if (octave === 2) return "bg-amber-50 border-amber-100";
       if (octave === 3) return "bg-teal-50 border-teal-100";
-      if (octave === 4) return "bg-blue-50 border-blue-100";
+      // if (octave === 4) return "bg-blue-50 border-blue-100";
     }
     return "bg-gray-50 border-gray-100";
   };

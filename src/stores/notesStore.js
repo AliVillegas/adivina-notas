@@ -245,6 +245,24 @@ export const useNotesStore = create((set, get) => {
         octave: 2,
         clef: "bass",
       },
+      {
+        name: "C2", // Third line from bottom
+        solfeo: "Do",
+        position: 1.5,
+        onLine: false,
+        frequency: 130.81,
+        octave: 2,
+        clef: "bass",
+      },
+      {
+        name: "D2", // Fourth line from bottom
+        solfeo: "Re",
+        position: 2,
+        onLine: true,
+        frequency: 146.83,
+        octave: 2,
+        clef: "bass",
+      },
     ];
 
     // Second octave (3rd octave)
@@ -343,24 +361,42 @@ export const useNotesStore = create((set, get) => {
         octave: 4,
         clef: "bass",
       },
-      {
-        name: "F4", // Space above second ledger line
-        solfeo: "Fa",
-        position: 6.5,
-        onLine: false,
-        frequency: 349.23,
-        octave: 4,
-        clef: "bass",
-      },
-      {
-        name: "G4", // Third ledger line above staff
-        solfeo: "Sol",
-        position: 7,
-        onLine: true,
-        frequency: 392.0,
-        octave: 4,
-        clef: "bass",
-      },
+      // {
+      //   name: "F4", // Space above second ledger line
+      //   solfeo: "Fa",
+      //   position: 6.5,
+      //   onLine: false,
+      //   frequency: 349.23,
+      //   octave: 4,
+      //   clef: "bass",
+      // },
+      // {
+      //   name: "G4", // Third ledger line above staff
+      //   solfeo: "Sol",
+      //   position: 7,
+      //   onLine: true,
+      //   frequency: 392.0,
+      //   octave: 4,
+      //   clef: "bass",
+      // },
+      // {
+      //   name: "A4", // Fourth ledger line above staff
+      //   solfeo: "La",
+      //   position: 7.5,
+      //   onLine: false,
+      //   frequency: 440.0,
+      //   octave: 4,
+      //   clef: "bass",
+      // },
+      // {
+      //   name: "B4", // Space above fourth ledger line
+      //   solfeo: "Si",
+      //   position: 8,
+      //   onLine: true,
+      //   frequency: 493.88,
+      //   octave: 4,
+      //   clef: "bass",
+      // },
     ];
 
     return [...octave2, ...octave3, ...octave4];
