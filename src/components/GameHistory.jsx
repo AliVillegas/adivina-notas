@@ -1,12 +1,20 @@
 import React, { useState } from "react";
-import useStore from "../store";
-import { formatDate } from "../utils";
+import { useGameStore } from "../stores/gameStore";
+import {
+  formatDate,
+  formatTimeInSeconds,
+  getAverageResponseTime,
+} from "../utils/historyUtils";
 
 const GameHistory = () => {
-  const { gameHistory } = useStore();
+  const { gameHistory } = useGameStore();
   const [expandedGame, setExpandedGame] = useState(null);
 
-  if (gameHistory.length === 0) {
+  if (
+    !gameHistory ||
+    gameHistory.length === 0 ||
+    !gameHistory.some((game) => game.completed)
+  ) {
     return (
       <p className="text-gray-500 text-sm italic mt-4">
         No hay historial de partidas
@@ -14,24 +22,9 @@ const GameHistory = () => {
     );
   }
 
-  // Calculate average response time for correct answers
-  const getAverageResponseTime = (rounds) => {
-    const correctRounds = rounds.filter((r) => r.correct && r.responseTimeMs);
-    if (correctRounds.length === 0) return "N/A";
-
-    const totalTime = correctRounds.reduce(
-      (sum, r) => sum + r.responseTimeMs,
-      0
-    );
-    // Return the average time in seconds
-    return (
-      (Math.round(totalTime / correctRounds.length) / 1000).toFixed(1) + "s"
-    );
-  };
-
-  // Format milliseconds to seconds
-  const formatTimeInSeconds = (ms) => {
-    return (ms / 1000).toFixed(1) + "s";
+  // Map clef names
+  const getClefName = (clef) => {
+    return clef === "bass" ? "Clave de Fa" : "Clave de Sol";
   };
 
   return (
@@ -52,7 +45,12 @@ const GameHistory = () => {
                 setExpandedGame(expandedGame === index ? null : index)
               }
             >
-              <span>{formatDate(game.date)}</span>
+              <span className="flex items-center">
+                {formatDate(game.date)}
+                <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                  {getClefName(game.clef || "treble")}
+                </span>
+              </span>
               <div className="flex items-center">
                 <span className="font-medium mr-2">
                   Puntuación: {game.score}/{game.totalRounds}
@@ -64,30 +62,31 @@ const GameHistory = () => {
             </div>
 
             <div className="flex flex-wrap mt-1">
-              {game.rounds.map((round, rIndex) => (
-                <div
-                  key={rIndex}
-                  className={`w-6 h-6 mx-1 mb-1 rounded-full flex items-center justify-center text-xs ${
-                    round.correct
-                      ? "bg-green-100 text-green-800 border border-green-300"
-                      : "bg-red-100 text-red-800 border border-red-300"
-                  }`}
-                  title={`Ronda ${round.round}: ${round.shownNote} (${
-                    round.noteInfo || ""
-                  }) - ${round.correct ? "Correcto" : "Incorrecto"}${
-                    round.responseTimeMs
-                      ? ` - Tiempo: ${formatTimeInSeconds(
-                          round.responseTimeMs
-                        )}`
-                      : ""
-                  }`}
-                >
-                  {round.correct ? "✓" : "✗"}
-                </div>
-              ))}
+              {Array.isArray(game.rounds) &&
+                game.rounds.map((round, rIndex) => (
+                  <div
+                    key={rIndex}
+                    className={`w-6 h-6 mx-1 mb-1 rounded-full flex items-center justify-center text-xs ${
+                      round.correct
+                        ? "bg-green-100 text-green-800 border border-green-300"
+                        : "bg-red-100 text-red-800 border border-red-300"
+                    }`}
+                    title={`Ronda ${round.round}: ${round.shownNote} (${
+                      round.noteInfo || ""
+                    }) - ${round.correct ? "Correcto" : "Incorrecto"}${
+                      round.responseTimeMs
+                        ? ` - Tiempo: ${formatTimeInSeconds(
+                            round.responseTimeMs
+                          )}`
+                        : ""
+                    }`}
+                  >
+                    {round.correct ? "✓" : "✗"}
+                  </div>
+                ))}
             </div>
 
-            {expandedGame === index && (
+            {expandedGame === index && Array.isArray(game.rounds) && (
               <div className="mt-2 text-xs border-t pt-2 border-gray-200">
                 <div className="flex justify-between text-gray-600 mb-1">
                   <span>Tiempo promedio de respuesta (correctas):</span>

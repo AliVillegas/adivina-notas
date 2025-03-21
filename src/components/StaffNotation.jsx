@@ -1,48 +1,37 @@
 import React from "react";
-import useStore from "../store";
-import { playNote } from "../utils";
+import { useGameStore } from "../stores/gameStore";
+import { useSettingsStore } from "../stores/settingsStore";
+import { useAudioStore } from "../stores/audioStore";
 
 const StaffNotation = () => {
-  const { currentNote, soundEnabled, playing, setPlaying } = useStore();
-
-  // Add debug log to see if component is being rendered and receiving data
-  console.log("StaffNotation rendering with currentNote:", currentNote);
+  const { currentNote, activeClef } = useGameStore();
+  const { soundEnabled } = useSettingsStore();
+  const { playing, playNote } = useAudioStore();
 
   if (!currentNote) {
-    console.log("No currentNote available, rendering null");
     return (
       <div className="text-center py-10 text-gray-500">Cargando nota...</div>
     );
   }
 
-  // Define constants for the grid
-  const GRID_ROWS = 11; // 5 lines + 6 spaces (including spaces above and below)
-  const ROW_HEIGHT = 12; // Height of each row in pixels
-  const TOTAL_HEIGHT = GRID_ROWS * ROW_HEIGHT;
+  // Define constants for spacing
+  const STAFF_HEIGHT = 120; // Total height in pixels
+  const LINE_SPACING = 12; // Space between lines (px)
 
-  // Get position in the grid based on note name
-  const getGridRow = () => {
-    // Use the position property directly as it's now consistently defined
-    return currentNote.position;
+  // Position calculation
+  // In our note definition:
+  // position 0 = first line from bottom (E4 in treble, G2 in bass)
+  // Each 0.5 increment is a step up (line to space or space to line)
+  // We multiply by LINE_SPACING to get pixel position
+  const calculateYPosition = (position) => {
+    // Start from the bottom of the staff
+    // Higher position = higher up the staff = smaller Y value
+    const basePosition = STAFF_HEIGHT - 20; // Base position (bottom line)
+    return basePosition - position * LINE_SPACING;
   };
 
-  const gridRow = getGridRow();
-  console.log(
-    `Rendering note: ${currentNote.solfeo} (${currentNote.name}) in grid row: ${gridRow}`
-  );
-
-  // Convert grid row to position in pixels (from bottom)
-  const positionFromBottom = gridRow * ROW_HEIGHT;
-
-  // Convert to position from top (since CSS uses top from top)
-  // Fine adjustment to center notes on lines
-  let verticalPosition = TOTAL_HEIGHT - positionFromBottom - ROW_HEIGHT / 2;
-
-  // If the note is on a line, center it exactly on the line
-  if (currentNote.onLine) {
-    // Adjustment to center notes on lines
-    verticalPosition = TOTAL_HEIGHT - positionFromBottom - ROW_HEIGHT / 2 - 1;
-  }
+  // Calculate vertical position for the note
+  const noteYPosition = calculateYPosition(currentNote.position);
 
   // Handle note playback
   const handlePlayNote = () => {
@@ -50,95 +39,124 @@ const StaffNotation = () => {
     console.log(
       `Button on staff - Playing: ${currentNote.solfeo} (${currentNote.name}) with frequency: ${currentNote.frequency}Hz`
     );
-    playNote(currentNote.frequency, soundEnabled, setPlaying);
+    playNote(currentNote.frequency);
   };
+
+  // Determine if we need to show ledger lines
+  const showLedgerLines = () => {
+    const ledgerLines = [];
+
+    // Lines above the staff (positions higher than 4)
+    if (currentNote.position > 4 && currentNote.onLine) {
+      // For each whole number position above 4
+      for (let pos = 5; pos <= currentNote.position; pos += 1) {
+        if (Number.isInteger(pos)) {
+          ledgerLines.push({
+            key: `ledger-above-${pos}`,
+            position: calculateYPosition(pos),
+          });
+        }
+      }
+    }
+
+    // Lines below the staff (positions less than 0)
+    if (currentNote.position < 0 && currentNote.onLine) {
+      // For each whole number position below 0
+      for (let pos = -1; pos >= currentNote.position; pos -= 1) {
+        if (Number.isInteger(pos)) {
+          ledgerLines.push({
+            key: `ledger-below-${pos}`,
+            position: calculateYPosition(pos),
+          });
+        }
+      }
+    }
+
+    return ledgerLines;
+  };
+
+  // Get ledger lines
+  const ledgerLines = showLedgerLines();
 
   return (
     <div className="relative h-56 w-full max-w-md mx-auto mb-2">
-      <div className="absolute inset-0" style={{ height: TOTAL_HEIGHT }}>
-        {/* Staff lines */}
-        {[0, 2, 4, 6, 8].map((lineIdx) => (
+      <div className="absolute inset-0">
+        {/* Staff lines - 5 lines from bottom to top */}
+        {[0, 1, 2, 3, 4].map((lineNum) => (
           <div
-            key={`line-${lineIdx}`}
+            key={`staff-line-${lineNum}`}
             className="absolute w-full h-0.5 bg-black"
             style={{
-              top: `${TOTAL_HEIGHT - lineIdx * ROW_HEIGHT - ROW_HEIGHT / 2}px`,
+              top: `${calculateYPosition(lineNum)}px`,
             }}
           />
         ))}
 
-        {/* Ledger lines above the staff - for higher notes */}
-        {currentNote && currentNote.position > 8 && (
-          <>
-            {[10, 14].map(
-              (lineIdx) =>
-                currentNote.position >= lineIdx &&
-                currentNote.onLine && (
-                  <div
-                    key={`ledger-above-${lineIdx}`}
-                    className="absolute w-10 h-0.5 bg-black left-1/2 transform -translate-x-1/2"
-                    style={{
-                      top: `${
-                        TOTAL_HEIGHT - lineIdx * ROW_HEIGHT - ROW_HEIGHT / 2
-                      }px`,
-                    }}
-                  />
-                )
-            )}
-          </>
-        )}
+        {/* Ledger lines */}
+        {ledgerLines.map((line) => (
+          <div
+            key={line.key}
+            className="absolute w-10 h-0.5 bg-black left-1/2 transform -translate-x-1/2"
+            style={{
+              top: `${line.position}px`,
+            }}
+          />
+        ))}
 
-        {/* Ledger lines below the staff - for lower notes */}
-        {currentNote && currentNote.position < 0 && (
-          <>
-            {[-2, -6].map(
-              (lineIdx) =>
-                currentNote.position <= lineIdx &&
-                currentNote.onLine && (
-                  <div
-                    key={`ledger-below-${lineIdx}`}
-                    className="absolute w-10 h-0.5 bg-black left-1/2 transform -translate-x-1/2"
-                    style={{
-                      top: `${
-                        TOTAL_HEIGHT - lineIdx * ROW_HEIGHT - ROW_HEIGHT / 2
-                      }px`,
-                    }}
-                  />
-                )
-            )}
-          </>
-        )}
+        {/* Middle C indicator */}
+        {(activeClef === "treble" && currentNote.position <= -1) ||
+        (activeClef === "bass" && currentNote.position >= 5) ? (
+          <div
+            className="absolute right-4 w-8 h-0.5 bg-gray-300"
+            style={{
+              top: `${calculateYPosition(activeClef === "treble" ? -1 : 5)}px`,
+              borderTopStyle: "dashed",
+            }}
+          />
+        ) : null}
 
-        {/* Treble clef */}
+        {/* Clef symbol */}
         <div
           className="absolute left-2 text-6xl font-bold"
-          style={{ top: "30px", transform: "scale(3)" }}
+          style={{
+            top: activeClef === "treble" ? "30px" : "18px",
+            transform: "scale(3)",
+          }}
         >
-          𝄞
+          {activeClef === "treble" ? "𝄞" : "𝄢"}
         </div>
 
-        {/* Note */}
+        {/* Note head */}
         <div
           className="absolute w-6 h-4 bg-black rounded-full"
           style={{
-            top: `${verticalPosition}px`,
+            top: `${noteYPosition}px`,
             left: "50%",
             transform: "translate(-50%, -50%)",
           }}
         />
 
-        {/* Display octave number */}
-        {/* <div
-          className="absolute text-xs font-medium text-indigo-700"
-          style={{
-            top: `${verticalPosition - 15}px`,
-            left: "calc(50% + 15px)",
-          }}
-        >
-          {currentNote.name}
-        </div> */}
+        {/* Note stem */}
+        {currentNote.position < 2 ? (
+          <div
+            className="absolute w-1 bg-black"
+            style={{
+              top: `${noteYPosition - 2}px`,
+              left: "53%",
+              height: "28px",
+            }}
+          />
+        ) : (
+          <div
+            className="absolute w-1 bg-black"
+            style={{
+              top: `${noteYPosition - 24}px`,
+              left: "47%",
+              height: "28px",
+            }}
+          />
+        )}
       </div>
-
       {/* Button to listen to the note */}
       {soundEnabled && (
         <button
@@ -162,6 +180,10 @@ const StaffNotation = () => {
           </svg>
         </button>
       )}
+      {/* Debug info - only shown in development */}(
+      {/* <div className="absolute bottom-0 left-0 text-xs bg-white/70 p-1 rounded text-gray-500">
+        {currentNote.name} ({currentNote.solfeo}) - {activeClef} clef
+      </div> */}
     </div>
   );
 };
