@@ -23,7 +23,15 @@ const GameHistory = () => {
       (sum, r) => sum + r.responseTimeMs,
       0
     );
-    return Math.round(totalTime / correctRounds.length);
+    // Return the average time in seconds
+    return (
+      (Math.round(totalTime / correctRounds.length) / 1000).toFixed(1) + "s"
+    );
+  };
+
+  // Format milliseconds to seconds
+  const formatTimeInSeconds = (ms) => {
+    return (ms / 1000).toFixed(1) + "s";
   };
 
   return (
@@ -68,7 +76,9 @@ const GameHistory = () => {
                     round.noteInfo || ""
                   }) - ${round.correct ? "Correcto" : "Incorrecto"}${
                     round.responseTimeMs
-                      ? ` - Tiempo: ${round.responseTimeMs}ms`
+                      ? ` - Tiempo: ${formatTimeInSeconds(
+                          round.responseTimeMs
+                        )}`
                       : ""
                   }`}
                 >
@@ -82,7 +92,7 @@ const GameHistory = () => {
                 <div className="flex justify-between text-gray-600 mb-1">
                   <span>Tiempo promedio de respuesta (correctas):</span>
                   <span className="font-medium">
-                    {getAverageResponseTime(game.rounds)}ms
+                    {getAverageResponseTime(game.rounds)}
                   </span>
                 </div>
 
@@ -111,7 +121,7 @@ const GameHistory = () => {
                         <td className="py-1 pr-2">{round.selectedNote}</td>
                         <td className="py-1">
                           {round.responseTimeMs
-                            ? `${round.responseTimeMs}ms`
+                            ? formatTimeInSeconds(round.responseTimeMs)
                             : "N/A"}
                         </td>
                       </tr>
