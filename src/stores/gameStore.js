@@ -152,7 +152,7 @@ export const useGameStore = create((set, get) => ({
   handleAnswerSelection: (note) => {
     const state = get();
     const { soundEnabled } = useSettingsStore.getState();
-    const { playSuccessSound, playErrorSound } = useAudioStore.getState();
+    const { playErrorSound } = useAudioStore.getState();
 
     if (state.showResult || !state.currentNote) return;
 
@@ -305,5 +305,19 @@ export const useGameStore = create((set, get) => ({
     });
 
     return csv;
+  },
+
+  resetGame: () => {
+    set({
+      gameActive: false,
+      gameComplete: false,
+      currentRound: 0,
+      score: 0,
+      currentNote: null,
+      selectedAnswer: null,
+      showResult: false,
+      isCorrect: false,
+      noteStartTime: null,
+    });
   },
 }));
